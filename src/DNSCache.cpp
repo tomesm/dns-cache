@@ -5,13 +5,10 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-#include <mutex>
+
 
 #include "../include/DNSCache.h"
 
-//using namespace std;
-using std::cout;
-using std::endl;
 
 /* Null, because instance will be initialized on demand. */
 DNSCache* DNSCache::instance = NULL;
@@ -25,71 +22,72 @@ DNSCache* DNSCache::get_instance(size_t max_size)
     return instance;
 }
 
-
 DNSCache::DNSCache(size_t max_size): m_max_size(max_size)
 {
 }
 
-
 void DNSCache::update(const std::string& name, const std::string& ip) throw()
 {
-
-    m_lock.lock();
-    // we need to start locking when finding index, because some other thread
-    // could pop-out the element menawhile and we need to prevent it
-    int index_ip = find_elem(ip);
-    int index_name = find_elem(name);
     int index;
-    // either name or ip must be found to update the record
-    if (index_ip >= 0 || index_name >= 0) {
-        // update record
-        // get index eiter based on IP or a domain name
-        // TODO find better way to check
-        if (index_ip > 0 )
-            index = index_ip;
-        else
-            index = index_name;
 
-        try {
-            // add timestamp
-            m_records.at(index).timestamp = set_time_stamp();
-            m_records.at(index).name = name;
-            m_records.at(index).ip = ip;
-            // just sort after every update
-
-        } catch (std::exception& e) {
-            cout << "Could not update(update) record. ERROR: " << e.what() << endl;
-        }
-    } else {
-        // add new record
-        try {
-            // if the limit is exceeded, the oldest unused record is removed
-            // TODO: test
-            if (m_records.size() >= m_max_size){
-                sort(); // sort the oldest record before poping
-                // only sorting when adding elem is enough
-                m_records.pop_back();
-            }
-            // always put new elems at the beginning
-            auto it = m_records.begin();
-            it = m_records.insert(it, Record(name, ip, set_time_stamp()));
-            // TODO: check the return value
-        }
-        catch (std::exception &e) {
-            cout << "Could not update(add) record. ERROR: " << e.what() << endl;
-        }
+    try {
+        index = modify(name, ip);
+    } catch (std::exception& e) {
+        std::cout << "Could not update(update) record. ERROR: " << e.what() << std::endl;
     }
 
-    m_lock.unlock();
+    if (index == -1){
+        try {
+            add(name, ip);
+        } catch (std::exception &e) {
+            std::cout << "Could not update(add) record. ERROR: " << e.what() << std::endl;
+            // TODO: change to cerr
+        }
+    }
 }
 
+int DNSCache::modify(const std::string &name, const std::string &ip)
+{
+    /* We need to start locking when finding index, because some other thread
+     * could pop-out the element meanwhile and we need to prevent it
+     * using a mutex wrapper std::lock_guard: When lock goes out of scope, its
+     * destructor unlocks the underlying mutex m_mutex
+     */
+    std::lock_guard<std::mutex> lock(m_mutex);
+
+    int index_ip = get_record_index(ip); // find index based on ip
+    int index_name = get_record_index(name); // find index based on name
+    int rval = -1;
+    // either name or ip must be found to modify the record
+    if (index_ip >= 0 || index_name >= 0) {
+        if (index_ip >= 0 ) {
+            m_records.at(index_ip).timestamp = set_time_stamp();
+            m_records.at(index_ip).ip = ip;
+            rval = index_ip;
+        } else {
+            m_records.at(index_name).timestamp = set_time_stamp();
+            m_records.at(index_name).name = name;
+            rval = index_name;
+        }
+    }
+    return rval;
+}
+
+void DNSCache::add(const std::string& name, const std::string& ip)
+{
+    //
+    if (m_records.size() >= m_max_size){
+        sort(); // move the oldest record at the end of collection
+        m_records.pop_back();
+    }
+    // always put new elems at the beginning
+    auto it = m_records.begin();
+    it = m_records.insert(it, Record(name, ip, set_time_stamp()));
+    // TODO: check the return value
+}
 
 void DNSCache::sort()
 {
-    // find record with lowest update rank using lambda function and move the
-    // at the end of the collection so that the oldest record can be poped out
-    // when exceeding the max_limit
-    // TODO: perhaps there is a better way than using timestamps
     std::sort(m_records.begin(),m_records.end(),
          [](const Record &x, const Record &y) {
             return (x.timestamp > y.timestamp);
@@ -97,43 +95,40 @@ void DNSCache::sort()
     );
 }
 
-
 void DNSCache::delete_list() throw()
 {
     m_records.clear();
 }
 
-
 void DNSCache::print_records() throw()
 {
-    //cout << "Reading records..." << endl;
-    std::vector<Record>::const_iterator iter ;
+    std::vector<Record>::const_iterator iter;
     std::vector<Record>::const_iterator end;
 
     for (iter = m_records.begin(), end = m_records.end(); iter != end; ++iter) {
         std::cout << iter->ip.data();
-        std::cout << " " << iter->name.data() << endl;
+        std::cout << " " << iter->name.data() << std::endl;
     }
-    cout << endl;
-}
 
+    std::cout << std::endl;
+}
 
 std::string DNSCache::resolve(const std::string& name) throw()
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
     std::string found;
-    // we will be searching struct with given name so we can use C++11 and
-    // to capture the name as a lambda expression
-    int index = find_elem(name);
+    int index = get_record_index(name);
+
     if (index == -1) {
         return found;
     } else {
-        m_records.at(index).timestamp = set_time_stamp(); // increase operations tracking
-        return m_records.at(index).ip;
+        m_records.at(index).timestamp = set_time_stamp();
+        found = m_records.at(index).ip;
+        return found;
     }
 }
 
-
-int DNSCache::find_elem(const std::string& text)
+int DNSCache::get_record_index(const std::string &text)
 {
     // we will be searching struct with given name or ip so we can use C++11 and
     // to capture the name as a lambda expression
@@ -148,7 +143,6 @@ int DNSCache::find_elem(const std::string& text)
     else
         return (int) std::distance(m_records.begin(), it);
 }
-
 
 std::chrono::system_clock::time_point DNSCache::set_time_stamp()
 {
