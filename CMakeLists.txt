@@ -4,7 +4,7 @@ project(DNSCache)
 # comment C++11 tpo enable catch testing on MAC OSX
 set(CMAKE_CXX_STANDARD 11)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -std=c++11")
 
 set(SRC_DIR src)
 set(SOURCE_FILES demo.cpp ${SRC_DIR}/DNSCache.cpp)
