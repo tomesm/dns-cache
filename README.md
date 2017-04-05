@@ -45,8 +45,6 @@ must be installed:
 NOTE: __cmake__ version must be __3.6__ or __higher__.
 #### Build
 
-NOTE: For simplicity, the class is not going to be built as a shared _.so_ library. The purpose (for now) is just to show a demo with threads and tests.
-
 Clone this repository:
 
     git clone https://github.com/tomesm/dns-cache.git
