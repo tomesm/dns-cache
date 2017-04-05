@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 #include <arpa/inet.h>
 
 #include "../include/DNSCache.h"
