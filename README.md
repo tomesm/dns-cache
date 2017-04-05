@@ -42,6 +42,7 @@ must be installed:
 
     g++, cmake, git
 
+NOTE: __cmake__ version must be __3.6__ or __higher__.
 #### Build
 
 NOTE: For simplicity, the class is not going to be built as a shared _.so_ library. The purpose (for now) is just to show a demo with threads and tests.
@@ -54,7 +55,7 @@ Then go inside the folder:
 
     cd dns-cache
 
-Use cmake in version 3.6 or higher. Ideally create a separate build folder:
+Use cmake or higher. Ideally create a separate build folder:
 
     mkdir build
     cd build
@@ -67,6 +68,10 @@ This will create a MAKEFILE inside the _build_ folder. Now you can just comile w
 This command creates two binaries:
 
     demo dns-test
+
+and one shared library:
+
+    libDNSCache.so
 
 ### Usage
 
