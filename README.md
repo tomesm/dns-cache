@@ -70,9 +70,9 @@ This command creates two binaries:
 
 ### Usage
 
-Move the _hosts_ file with some sample input data (using _/etc/hosts_ format) into build folder:
+While still inside the _build_ directory, move the _hosts_ file with some sample input data (using _/etc/hosts_ format) into build folder:
 
-    mv hosts build/hosts
+    mv ../hosts hosts
 
 The _demo_ file is a very dummy binary to show working with threads. Just run:
 
