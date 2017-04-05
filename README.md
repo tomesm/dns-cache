@@ -82,6 +82,6 @@ Be aware that the executable runs in an __endless loop__! You need to stop execu
 
     ^C
 
-To run tests, just put:
+To run tests just put:
 
     ./dns-test
