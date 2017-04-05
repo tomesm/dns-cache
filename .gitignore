@@ -1,3 +1,8 @@
+# project specific
+.vscode/
+.idea/
+.DS*
+
 # Compiled Object files
 *.slo
 *.lo
