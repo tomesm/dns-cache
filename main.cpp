@@ -77,11 +77,11 @@ void multi_update(DNSCache* cache, int id)
     }
 }
 
-int main(int argc, char* argv[])
+int main()
 {
     DNSCache* Cache = DNSCache::get_instance(5);
 
-    init(argv[1], Cache);
+    init("hosts", Cache);
 
     thread t1(multi_update, Cache, 1);
     thread t2(multi_update, Cache, 2);
