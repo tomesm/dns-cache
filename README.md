@@ -54,7 +54,7 @@ Then go inside the folder:
 
     cd dns-cache
 
-Use cmake. Ideally create a separate build folder:
+Use cmake in version 3.6 or higher. Ideally create a separate build folder:
 
     mkdir build
     cd build
